@@ -12,5 +12,5 @@ const apiController = require("../controllers/api");
 //router.get('/stations', apiController.readAll);
 //router.get('/station/:service_id', apiController.read);
 router.get('/businfo/:pos', apiController.businfo);
-router.get('/foodinfo', apiController.foodinfo);
+router.get('/sikdang/:pos', apiController.sikdanginfo);
 module.exports = router;

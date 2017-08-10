@@ -20,13 +20,21 @@ const options = {
         return cheerio.load(body);
     }
 };
-const foodoptions = {
-    uri: 'http://211.236.110.100/GMBIS/m/page/srchBusArr.do',
+Date.prototype.yyyymmdd = function(days) {
+    var mm = this.getMonth() + 1; // getMonth() is zero-based
+    var dd = this.getDate() + days;
+
+    return [this.getFullYear(),
+        (mm>9 ? '' : '0') + mm,
+        (dd>9 ? '' : '0') + dd
+    ].join('');
+};
+
+const sikdangOptions = {
     headers:headers,
     method: 'GET',
     qs: {
-        'act':'srchBusArr',
-        'menuCode': '1_03'
+        ilja: new Date().yyyymmdd()
     },
     transform: function (body) {
         return cheerio.load(body);
@@ -110,7 +118,13 @@ function updateName(){
                 break;
         }
     })
-
+}
+function updateSikdang(pos){
+    switch (pos){
+        case 0:
+            this.uri = 'http://www.kumoh.ac.kr/jsp/common/sikdang.do';
+            break;
+    }
 }
 exports.businfo = function (req, res, next) {
     const tempPos = Number(req.params.pos);
@@ -118,14 +132,14 @@ exports.businfo = function (req, res, next) {
     var rp1 = rp(options)
         .then(function ($) {
             const jsonObject = {};
+            const jsonArray = [];
             jsonObject.bus_station = getPostion(tempPos, 0);
-            jsonArray = [];
             var ii = 0;
             $('.arrive_desc').each(function (i, elem) {
                 jsonArray.push({});
-                jsonArray.bus_no = $(this).find('.bus_no').text();
-                jsonArray.time = $(this).find('.bus_state').text();
-                jsonArray.location = $(this).find('.bus_state').next().next().text().trim();
+                jsonArray[i].bus_no = $(this).find('.bus_no').text();
+                jsonArray[i].time = $(this).find('.bus_state').text();
+                jsonArray[i].location = $(this).find('.bus_state').next().next().text().trim();
             });
             jsonObject.arrive_desc = jsonArray;
             resultJson[0] = jsonObject;
@@ -136,13 +150,13 @@ exports.businfo = function (req, res, next) {
     var rp2 = rp(options)
         .then(function ($) {
             const jsonObject = {};
+            const jsonArray = [];
             jsonObject.bus_station = getPostion(tempPos, 1);
-            jsonArray = [];
             $('.arrive_desc').each(function (i, elem) {
                 jsonArray.push({});
-                jsonArray.bus_no = $(this).find('.bus_no').text();
-                jsonArray.time = $(this).find('.bus_state').text();
-                jsonArray.location = $(this).find('.bus_state').next().next().text().trim();
+                jsonArray[i].bus_no = $(this).find('.bus_no').text();
+                jsonArray[i].time = $(this).find('.bus_state').text();
+                jsonArray[i].location = $(this).find('.bus_state').next().next().text().trim();
             });
             jsonObject.arrive_desc = jsonArray;
             resultJson[1] = jsonObject;
@@ -153,17 +167,14 @@ exports.businfo = function (req, res, next) {
     var rp3 = rp(options)
         .then(function ($) {
             const jsonObject = {};
+            const jsonArray = [];
             jsonObject.bus_station = getPostion(tempPos, 2);
-            jsonArray = [];
+
             $('.arrive_desc').each(function (i, elem) {
                 jsonArray.push({});
-                jsonArray.bus_no = $(this).find('.bus_no').text();
-                jsonArray.time = $(this).find('.bus_state').text();
-                jsonArray.location = $(this).find('.bus_state').next().next().text().trim();
-                /*json[getPostion(tempPos, 2)].push({});
-                json[getPostion(tempPos, 2)][i].bus_no = $(this).find('.bus_no').text();
-                json[getPostion(tempPos, 2)][i].time = $(this).find('.bus_state').text();
-                json[getPostion(tempPos, 2)][i].location = $(this).find('.bus_state').next().next().text().trim();*/
+                jsonArray[i].bus_no = $(this).find('.bus_no').text();
+                jsonArray[i].time = $(this).find('.bus_state').text();
+                jsonArray[i].location = $(this).find('.bus_state').next().next().text().trim();
             });
             jsonObject.arrive_desc = jsonArray;
             resultJson[2] = jsonObject;
@@ -177,23 +188,21 @@ exports.businfo = function (req, res, next) {
     });
 };
 
-exports.foodinfo = function(req, res, next) {
+exports.sikdanginfo = function(req, res, next) {
+
     const tempPos = Number(req.params.pos);
-    if(tempPos === 0) {}
-    else if(tempPos === 1) {}
-    else if(tempPos === 2) {}
-    else if(tempPos === 3) {}
-    else if(tempPos === 4) {}
-    else if(tempPos === 5) {}
-    rp(foodOptions)
+    updateSikdang.call(sikdangOptions, tempPos);
+    console.log(sikdangOptions.uri);
+    rp(sikdangOptions)
         .then(function ($) {
-            json[getPostion(tempPos, 2)]=[];
+
+            /*json[getPostion(tempPos, 2)]=[];
             $('.arrive_desc').each(function (i, elem) {
                 json[getPostion(tempPos, 2)].push({});
                 json[getPostion(tempPos, 2)][i].bus_no = $(this).find('.bus_no').text();
                 json[getPostion(tempPos, 2)][i].time = $(this).find('.bus_state').text();
                 json[getPostion(tempPos, 2)][i].location = $(this).find('.bus_state').next().next().text().trim();
-            });
+            });*/
         })
         .catch(function (err) {}
         );
