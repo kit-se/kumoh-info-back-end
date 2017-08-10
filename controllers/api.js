@@ -134,7 +134,6 @@ exports.businfo = function (req, res, next) {
             const jsonObject = {};
             const jsonArray = [];
             jsonObject.bus_station = getPostion(tempPos, 0);
-            var ii = 0;
             $('.arrive_desc').each(function (i, elem) {
                 jsonArray.push({});
                 jsonArray[i].bus_no = $(this).find('.bus_no').text();
@@ -146,7 +145,7 @@ exports.businfo = function (req, res, next) {
         })
         .catch(function (err) {}
     );
-    update.call(options, 0, 1);
+    update.call(options, tempPos, 1);
     var rp2 = rp(options)
         .then(function ($) {
             const jsonObject = {};
@@ -183,13 +182,11 @@ exports.businfo = function (req, res, next) {
         );
     Promise.all([rp1, rp2, rp3]).then( function() {
         updateName.call(resultJson);
-
         res.status(200).send(resultJson);
     });
 };
 
 exports.sikdanginfo = function(req, res, next) {
-
     const tempPos = Number(req.params.pos);
     updateSikdang.call(sikdangOptions, tempPos);
     console.log(sikdangOptions.uri);
