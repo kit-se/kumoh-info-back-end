@@ -4,7 +4,8 @@ const cheerio = require('cheerio');
 
 /* GET users listing. */
 var headers = {
-    'Content-Type': 'application/x-www-form-urlencoded'
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'User-Agent': '1'
 };
 const resultJson = [];
 
@@ -20,23 +21,40 @@ const options = {
         return cheerio.load(body);
     }
 };
-Date.prototype.yyyymmdd = function(days) {
-    var mm = this.getMonth() + 1; // getMonth() is zero-based
-    var dd = this.getDate() + days;
-
-    return [this.getFullYear(),
-        (mm>9 ? '' : '0') + mm,
-        (dd>9 ? '' : '0') + dd
-    ].join('');
+Date.prototype.yyyymmdd = function()
+{
+    var yyyy = this.getFullYear().toString();
+    var mm = (this.getMonth() + 1).toString();
+    var dd = this.getDate().toString();
+    return yyyy + (mm[1] ? mm : '0'+mm[0]) + (dd[1] ? dd : '0'+dd[0]);
 };
+Date.prototype.nyyyymmdd = function()
+{
+    this.setDate(this.getDate() + 1);
+    var yyyy = this.getFullYear().toString();
+    var mm = (this.getMonth() + 1).toString();
+    var dd = this.getDate().toString();
+    return yyyy + (mm[1] ? mm : '0'+mm[0]) + (dd[1] ? dd : '0'+dd[0]);
+};
+
 
 const sikdangOptions = {
     headers:headers,
-    method: 'GET',
     qs: {
         ilja: new Date().yyyymmdd()
     },
     transform: function (body) {
+        //console.log(body);
+        return cheerio.load(body);
+    }
+};
+const sikdangnOptions = {
+    headers:headers,
+    qs: {
+        ilja: new Date().nyyyymmdd()
+    },
+    transform: function (body) {
+        //console.log(body);
         return cheerio.load(body);
     }
 };
@@ -122,7 +140,16 @@ function updateName(){
 function updateSikdang(pos){
     switch (pos){
         case 0:
+            //학생식당
             this.uri = 'http://www.kumoh.ac.kr/jsp/common/sikdang.do';
+            break;
+        case 1:
+            //교직원식당
+            this.uri = 'http://www.kumoh.ac.kr/jsp/common/sikdang2.do';
+            break;
+        case 2:
+            //기숙사
+            this.uri = 'http://dorm.kumoh.ac.kr/facility/dorm/sikdang.do';
             break;
     }
 }
@@ -168,7 +195,6 @@ exports.businfo = function (req, res, next) {
             const jsonObject = {};
             const jsonArray = [];
             jsonObject.bus_station = getPostion(tempPos, 2);
-
             $('.arrive_desc').each(function (i, elem) {
                 jsonArray.push({});
                 jsonArray[i].bus_no = $(this).find('.bus_no').text();
@@ -189,20 +215,87 @@ exports.businfo = function (req, res, next) {
 exports.sikdanginfo = function(req, res, next) {
     const tempPos = Number(req.params.pos);
     updateSikdang.call(sikdangOptions, tempPos);
-    console.log(sikdangOptions.uri);
-    rp(sikdangOptions)
+    updateSikdang.call(sikdangnOptions, tempPos);
+    var rp1 = rp(sikdangOptions)
         .then(function ($) {
+            if(tempPos === 2)  {
+                //푸름
+                const jsonObject = {};
+                var jsonArray = [];
+                $('.meal01').each(function (i, elem) {
+                    $(this).find('dd').each(function (ii, ee) {
+                        jsonArray.push($(this).text().trim());
+                    });
+                });
+                jsonObject.푸름 = jsonArray;
+                resultJson[0] = jsonObject;
+                //오름 1동
+                jsonArray = [];
+                $('.meal02').each(function (i, elem) {
+                    $(this).find('dd').each(function (ii, ee) {
+                        jsonArray.push($(this).text().trim());
+                    });
+                });
+                jsonObject.오1 = jsonArray;
+                resultJson[0] = jsonObject;
+                //오름 3동
+                jsonArray = [];
+                $('.meal03').each(function (i, elem) {
+                    $(this).find('dd').each(function (ii, ee) {
+                        jsonArray.push($(this).text().trim());
+                    });
+                });
+                jsonObject.오3 = jsonArray;
+                resultJson[0] = jsonObject;
+            }
+            else
+            {
 
-            /*json[getPostion(tempPos, 2)]=[];
-            $('.arrive_desc').each(function (i, elem) {
-                json[getPostion(tempPos, 2)].push({});
-                json[getPostion(tempPos, 2)][i].bus_no = $(this).find('.bus_no').text();
-                json[getPostion(tempPos, 2)][i].time = $(this).find('.bus_state').text();
-                json[getPostion(tempPos, 2)][i].location = $(this).find('.bus_state').next().next().text().trim();
-            });*/
+            }
         })
-        .catch(function (err) {}
-        );
+        .catch(function (err) {});
+
+    var rp2 = rp(sikdangnOptions)
+        .then(function ($) {
+            if(tempPos === 2)  {
+                //푸름
+                const jsonObject = {};
+                var jsonArray = [];
+                $('.meal01').each(function (i, elem) {
+                    $(this).find('dd').each(function (ii, ee) {
+                        jsonArray.push($(this).text().trim());
+                    });
+                });
+                jsonObject.푸름 = jsonArray;
+                resultJson[1] = jsonObject;
+                //오름 1동
+                jsonArray = [];
+                $('.meal02').each(function (i, elem) {
+                    $(this).find('dd').each(function (ii, ee) {
+                        jsonArray.push($(this).text().trim());
+                    });
+                });
+                jsonObject.오1 = jsonArray;
+                resultJson[1] = jsonObject;
+                //오름 3동
+                jsonArray = [];
+                $('.meal03').each(function (i, elem) {
+                    $(this).find('dd').each(function (ii, ee) {
+                        jsonArray.push($(this).text());
+                    });
+                });
+                jsonObject.오3 = jsonArray;
+                resultJson[1] = jsonObject;
+            }
+            else
+            {
+
+            }
+        })
+        .catch(function (err) {});
+    Promise.all([rp1, rp2]).then( function() {
+        res.status(200).send(resultJson);
+    });
 };
 
 
