@@ -7,8 +7,6 @@ var headers = {
     'Content-Type': 'application/x-www-form-urlencoded',
     'User-Agent': '1'
 };
-
-
 const options = {
   uri: 'http://211.236.110.100/GMBIS/m/page/srchBusArr.do',
   headers:headers,
@@ -41,15 +39,6 @@ var sikdangOptions = {
   headers:headers,
   qs: {
     ilja: new Date().yyyymmdd()
-  },
-  transform: function (body) {
-    return cheerio.load(body);
-  }
-};
-var sikdangnOptions = {
-  headers:headers,
-  qs: {
-    ilja: new Date().nyyyymmdd()
   },
   transform: function (body) {
     return cheerio.load(body);
@@ -134,7 +123,7 @@ function updateName(){
     }
   })
 }
-function updateSikdang(pos){
+function updateSikdang(pos, boo){
   switch (pos){
     case 0:
       //학생식당
@@ -151,6 +140,11 @@ function updateSikdang(pos){
       this.uri = 'http://dorm.kumoh.ac.kr/facility/dorm/sikdang.do';
       break;
   }
+
+  if(boo === true)
+    this.qs.ilja = new Date().nyyyymmdd();
+  else
+    this.qs.ilja = new Date().yyyymmdd();
 }
 exports.businfo = function (req, res, next) {
   const resultJson = [];
@@ -214,10 +208,8 @@ exports.businfo = function (req, res, next) {
 exports.sikdanginfo = function(req, res, next) {
   const resultJson = [];
   const tempPos = Number(req.params.pos);
-  updateSikdang.call(sikdangOptions, tempPos);
-  updateSikdang.call(sikdangnOptions, tempPos);
-  console.log(sikdangOptions);
-  console.log(sikdangnOptions);
+  updateSikdang.call(sikdangOptions, tempPos, false);
+
   var rp1 = rp(sikdangOptions)
     .then(function ($) {
       const jsonObject = {};
@@ -253,7 +245,8 @@ exports.sikdanginfo = function(req, res, next) {
       }
     })
     .catch(function (err) {});
-  var rp2 = rp(sikdangnOptions)
+  updateSikdang.call(sikdangOptions, tempPos, true);
+  var rp2 = rp(sikdangOptions)
     .then(function ($) {
       const jsonObject = {};
       const jsonArray = [];
